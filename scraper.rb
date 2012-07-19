@@ -21,15 +21,15 @@ class Scraper
 
   #Sets Counter and given user pages
   def set_counter(pages)
-    @counter = []
+    @counter = 0
     @pages = pages.to_i
   end
 
   #Increments the counter by one and compares counter to pages 
   def page_counter
-    @counter.push(0)
-    puts "Page #{@counter.length} done"
-    get_next_page until @counter.length >= @pages
+    @counter+=1
+    puts "Page #{@counter} done"
+    get_next_page until @counter >= @pages
   end
 
   #Gets all of the image links
