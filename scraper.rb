@@ -15,6 +15,7 @@ class Scraper
 
   #Creates named directory
   def make_dir(direc)
+    direc.chomp!
     @direc = direc
     Dir.mkdir direc unless File.directory? direc
   end
@@ -51,8 +52,8 @@ class Scraper
   #Writes image files to given directory
   def save_files(links)
     links.each do |link|
-      if File.extname(link) != "" 
-        File.open("#{@direc}/" + File.basename(link), 'w') { |i| i.write(RestClient.get(link)) }    
+      if[".jpg",".gif",".png","jpeg"].include?(File.extname(link)) 
+        File.open("#{@direc}/" + File.basename(link), 'wb') { |i| i.write(RestClient.get(link)) }    
       end
     end
     page_counter
@@ -60,12 +61,12 @@ class Scraper
 end
 
   #Gather User input
-  puts "/r/ "
+  print "/r/"
   subreddit = gets
-  puts "Directory to save to: "
+  print "Directory to save to:  "
   direc = gets
-  puts "Number of pages to scrape: "
+  print "Number of pages to scrape: "
   pages = gets
-
+  
   s = Scraper.new(subreddit, direc, pages)
 
