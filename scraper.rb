@@ -5,26 +5,67 @@ require 'restclient'
 
 class Scraper
 
-#Asks user to choose subreddit and directory to save to
-  puts "Choose SubReddit:"
-  subreddit = gets
-  puts "Directory to save to"
-  direc = gets
+  # Gets given subreddit and passes user information
+  def initialize(subreddit, direc, pages)
+    @doc = open("http://www.reddit.com/r/#{subreddit}") { |f| Hpricot(f) }
+    make_dir(direc)
+    set_counter(pages)
+    get_links
+  end
 
-#Creates directory if the directory doesn't already exist
-  Dir.mkdir direc unless File.directory? direc
+  #Creates named directory
+  def make_dir(direc)
+    @direc = direc
+    Dir.mkdir direc unless File.directory? direc
+  end
 
-#Gets subreddit and pulls out image links
-  doc = open("http://www.reddit.com/r/#{subreddit}") { |f| Hpricot(f) }
-  links = doc.search("//a[@class='title ']")
-  links.map! { |link| "#{link['href']}" }
+  #Sets Counter and given user pages
+  def set_counter(pages)
+    @counter = []
+    @pages = pages.to_i
+  end
 
-#If link does not have a blank file extension then save file
-  links.each do |link|
-    if File.extname(link) != "" 
-      File.open("#{direc}/" + File.basename(link), 'w') do
-        |i| i.write(RestClient.get(link))
-      end    
+  #Increments the counter by one and compares counter to pages 
+  def page_counter
+    @counter.push(0)
+    puts "Page #{@counter.length} done"
+    get_next_page until @counter.length >= @pages
+  end
+
+  #Gets all of the image links
+  def get_links
+    links = @doc.search("//a[@class='title ']")
+    links.map! { |link| "#{link['href']}" } 
+    save_files(links)
+  end
+
+  #Gets next page link and opens the next page
+  def get_next_page
+    nextlink = @doc.search("//p[@class='nextprev']/a[@rel='nofollow next']")
+    nextlink.map! { |link| "#{link['href']}" }
+    stringlink = nextlink[0]
+    @doc = open(stringlink) { |f| Hpricot(f) }
+    get_links
+  end
+
+  #Writes image files to given directory
+  def save_files(links)
+    links.each do |link|
+      if File.extname(link) != "" 
+        File.open("#{@direc}/" + File.basename(link), 'w') { |i| i.write(RestClient.get(link)) }    
+      end
     end
+    page_counter
   end
 end
+
+  #Gather User input
+  puts "/r/ "
+  subreddit = gets
+  puts "Directory to save to: "
+  direc = gets
+  puts "Number of pages to scrape: "
+  pages = gets
+
+  s = Scraper.new(subreddit, direc, pages)
+
